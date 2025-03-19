@@ -108,17 +108,29 @@ int main(int argc, char const *argv[])
 		to be implemented.
 	************************************************************************************************/
 
+    //Round Robin Scheduling 
+
 	running1 = 1;
 	running2 = 1;
 	running3 = 1;
 	running4 = 1;
 
+    struct timespec startTime, endTime[4];
+    clock_gettime(CLOCK_MONOTONIC, &startTime);
+
 	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
 	{
+
+
 		if (running1 > 0){
+
+            struct timespec Start, Stop;
+
+            clock_gettime(CLOCK_MONOTONIC, &Start);
 			kill(pid1, SIGCONT);
 			usleep(QUANTUM1);
 			kill(pid1, SIGSTOP);
+
 		}
 		if (running2 > 0){
 			kill(pid2, SIGCONT);
