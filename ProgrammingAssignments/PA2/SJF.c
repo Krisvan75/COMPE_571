@@ -1,16 +1,13 @@
-#include <stdio.h> 
-#include <sys/types.h> 
-#include <unistd.h>  
-#include <stdlib.h>  
-#include <sys/wait.h> 
-#include <string.h> 
-#include <time.h> 
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 #include <signal.h>
-#include <sys/time.h>
+#include <time.h>
 
 /************************************************************************************************ 
-		These DEFINE statements represent the workload size of each task and 
-		the time quantum values for Round Robin scheduling for each task.
+        These DEFINE statements represent the workload size of each task.
 *************************************************************************************************/
 
 #define WORKLOAD1 100000
@@ -18,132 +15,130 @@
 #define WORKLOAD3 25000
 #define WORKLOAD4 10000
 
-#define QUANTUM1 1000
-#define QUANTUM2 1000
-#define QUANTUM3 1000
-#define QUANTUM4 1000
-
 /************************************************************************************************ 
-					DO NOT CHANGE THE FUNCTION IMPLEMENTATION
+                    DO NOT CHANGE THE FUNCTION IMPLEMENTATION
 *************************************************************************************************/
-void myfunction(int param){
-
-	int i = 2;
-	int j, k;
-
-	while(i < param){
-		k = i; 
-		for (j = 2; j <= k; j++)
-		{
-			if (k % j == 0){
-				k = k/j;
-				j--;
-				if (k == 1){
-					break;
-				}
-			}
-		}
-		i++;
-	}
+void myfunction(int param) {
+    int i = 2, j, k;
+    while (i < param) {
+        k = i;
+        for (j = 2; j <= k; j++) {
+            if (k % j == 0) {
+                k = k / j;
+                j--;
+                if (k == 1) break;
+            }
+        }
+        i++;
+    }
 }
+
 /************************************************************************************************/
+int main(int argc, char const *argv[]) {
+    pid_t pid1, pid2, pid3, pid4;
+    int running1, running2, running3, running4;
 
+    pid1 = fork();
+    if (pid1 == 0) {
+        myfunction(WORKLOAD1);
+        exit(0);
+    }
+    kill(pid1, SIGSTOP);
 
+    pid2 = fork();
+    if (pid2 == 0) {
+        myfunction(WORKLOAD2);
+        exit(0);
+    }
+    kill(pid2, SIGSTOP);
 
-int main(int argc, char const *argv[])
-{
-	pid_t pid1, pid2, pid3, pid4;
-	int running1, running2, running3, running4;
+    pid3 = fork();
+    if (pid3 == 0) {
+        myfunction(WORKLOAD3);
+        exit(0);
+    }
+    kill(pid3, SIGSTOP);
 
-	pid1 = fork();
+    pid4 = fork();
+    if (pid4 == 0) {
+        myfunction(WORKLOAD4);
+        exit(0);
+    }
+    kill(pid4, SIGSTOP);
 
-	if (pid1 == 0){
+    /************************************************************************************************ 
+            At this point, all newly-created child processes are stopped and ready for scheduling.
+    *************************************************************************************************/
 
-		myfunction(WORKLOAD1);
+    /************************************************************************************************
+            - Scheduling code starts here (Shortest Job First)
+            - Using running flags and response time measurement
+    ************************************************************************************************/
 
-		exit(0);
-	}
-	kill(pid1, SIGSTOP);
+    struct timespec start_time[4], end_time[4];
+    double response_time[4];
+    double total_response_time = 0.0;  
 
-	pid2 = fork();
+    running1 = 1;
+    running2 = 1;
+    running3 = 1;
+    running4 = 1;
 
-	if (pid2 == 0){
+    // Execute processes SJF scheduling: P4 → P3 → P2 → P1
 
-		myfunction(WORKLOAD2);
+    if (running4 > 0) {
+        clock_gettime(CLOCK_MONOTONIC, &start_time[3]);
+        kill(pid4, SIGCONT);
+        waitpid(pid4, &running4, 0);
+        clock_gettime(CLOCK_MONOTONIC, &end_time[3]);
+        response_time[3] = (end_time[3].tv_sec - start_time[3].tv_sec) + 
+                           (end_time[3].tv_nsec - start_time[3].tv_nsec) / 1e9;
+        total_response_time += response_time[3];
+    }
 
-		exit(0);
-	}
-	kill(pid2, SIGSTOP);
+    if (running3 > 0) {
+        clock_gettime(CLOCK_MONOTONIC, &start_time[2]);
+        kill(pid3, SIGCONT);
+        waitpid(pid3, &running3, 0);
+        clock_gettime(CLOCK_MONOTONIC, &end_time[2]);
+        response_time[2] = (end_time[2].tv_sec - start_time[2].tv_sec) + 
+                           (end_time[2].tv_nsec - start_time[2].tv_nsec) / 1e9;
+        total_response_time += response_time[2];
+    }
 
-	pid3 = fork();
+    if (running2 > 0) {
+        clock_gettime(CLOCK_MONOTONIC, &start_time[1]);
+        kill(pid2, SIGCONT);
+        waitpid(pid2, &running2, 0);
+        clock_gettime(CLOCK_MONOTONIC, &end_time[1]);
+        response_time[1] = (end_time[1].tv_sec - start_time[1].tv_sec) + 
+                           (end_time[1].tv_nsec - start_time[1].tv_nsec) / 1e9;
+        total_response_time += response_time[1];
+    }
 
-	if (pid3 == 0){
+    if (running1 > 0) {
+        clock_gettime(CLOCK_MONOTONIC, &start_time[0]);
+        kill(pid1, SIGCONT);
+        waitpid(pid1, &running1, 0);
+        clock_gettime(CLOCK_MONOTONIC, &end_time[0]);
+        response_time[0] = (end_time[0].tv_sec - start_time[0].tv_sec) + 
+                           (end_time[0].tv_nsec - start_time[0].tv_nsec) / 1e9;
+        total_response_time += response_time[0];
+    }
 
-		myfunction(WORKLOAD3);
+    /************************************************************************************************
+            - Scheduling code ends here
+    ************************************************************************************************/
 
-		exit(0);
-	}
-	kill(pid3, SIGSTOP);
+    printf("\nProcess Execution Order (Shortest Job First):\n");
+    printf("Process 4 (Workload %d) - Response Time: %.6f seconds\n", WORKLOAD4, response_time[3]);
+    printf("Process 3 (Workload %d) - Response Time: %.6f seconds\n", WORKLOAD3, response_time[2]);
+    printf("Process 2 (Workload %d) - Response Time: %.6f seconds\n", WORKLOAD2, response_time[1]);
+    printf("Process 1 (Workload %d) - Response Time: %.6f seconds\n", WORKLOAD1, response_time[0]);
 
-	pid4 = fork();
+    // Print overall response time
+    printf("\nOverall Response Time: %.6f seconds\n", total_response_time);
+    printf("**********************************************************************************\n");
 
-	if (pid4 == 0){
-
-		myfunction(WORKLOAD4);
-
-		exit(0);
-	}
-	kill(pid4, SIGSTOP);
-
-	/************************************************************************************************ 
-		At this point, all  newly-created child processes are stopped, and ready for scheduling.
-	*************************************************************************************************/
-
-
-
-	/************************************************************************************************
-		- Scheduling code starts here
-		- Below is a sample schedule. (which scheduling algorithm is this?)
-		- For the assignment purposes, you have to replace this part with the other scheduling methods 
-		to be implemented.
-	************************************************************************************************/
-
-	running1 = 1;
-	running2 = 1;
-	running3 = 1;
-	running4 = 1;
-
-	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
-	{
-		if (running1 > 0){
-			kill(pid1, SIGCONT);
-			usleep(QUANTUM1);
-			kill(pid1, SIGSTOP);
-		}
-		if (running2 > 0){
-			kill(pid2, SIGCONT);
-			usleep(QUANTUM2);
-			kill(pid2, SIGSTOP);
-		}
-		if (running3 > 0){
-			kill(pid3, SIGCONT);
-			usleep(QUANTUM3);
-			kill(pid3, SIGSTOP);
-		}
-		if (running4 > 0){
-			kill(pid4, SIGCONT);
-			usleep(QUANTUM4);
-			kill(pid4, SIGSTOP);
-		}
-		waitpid(pid1, &running1, WNOHANG);
-		waitpid(pid2, &running2, WNOHANG);
-		waitpid(pid3, &running3, WNOHANG);
-		waitpid(pid4, &running4, WNOHANG);
-	}
-
-	/************************************************************************************************
-		- Scheduling code ends here
-	************************************************************************************************/
-
-	return 0;
+    return 0;
 }

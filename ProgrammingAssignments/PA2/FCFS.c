@@ -48,13 +48,13 @@ void myfunction(int param){
 }
 /************************************************************************************************/
 
-
-
 int main(int argc, char const *argv[])
 {
 	pid_t pid1, pid2, pid3, pid4;
 	int running1, running2, running3, running4;
+	struct timeval start[4], response[4];
 
+	gettimeofday(&start[0], NULL);
 	pid1 = fork();
 
 	if (pid1 == 0){
@@ -65,6 +65,7 @@ int main(int argc, char const *argv[])
 	}
 	kill(pid1, SIGSTOP);
 
+	gettimeofday(&start[1], NULL);
 	pid2 = fork();
 
 	if (pid2 == 0){
@@ -75,6 +76,7 @@ int main(int argc, char const *argv[])
 	}
 	kill(pid2, SIGSTOP);
 
+	gettimeofday(&start[2], NULL);
 	pid3 = fork();
 
 	if (pid3 == 0){
@@ -85,6 +87,7 @@ int main(int argc, char const *argv[])
 	}
 	kill(pid3, SIGSTOP);
 
+	gettimeofday(&start[3], NULL);
 	pid4 = fork();
 
 	if (pid4 == 0){
@@ -108,38 +111,36 @@ int main(int argc, char const *argv[])
 		to be implemented.
 	************************************************************************************************/
 
-	running1 = 1;
-	running2 = 1;
-	running3 = 1;
-	running4 = 1;
+	
 
-	while (running1 > 0 || running2 > 0 || running3 > 0 || running4 > 0)
-	{
-		if (running1 > 0){
-			kill(pid1, SIGCONT);
-			usleep(QUANTUM1);
-			kill(pid1, SIGSTOP);
-		}
-		if (running2 > 0){
-			kill(pid2, SIGCONT);
-			usleep(QUANTUM2);
-			kill(pid2, SIGSTOP);
-		}
-		if (running3 > 0){
-			kill(pid3, SIGCONT);
-			usleep(QUANTUM3);
-			kill(pid3, SIGSTOP);
-		}
-		if (running4 > 0){
-			kill(pid4, SIGCONT);
-			usleep(QUANTUM4);
-			kill(pid4, SIGSTOP);
-		}
-		waitpid(pid1, &running1, WNOHANG);
-		waitpid(pid2, &running2, WNOHANG);
-		waitpid(pid3, &running3, WNOHANG);
-		waitpid(pid4, &running4, WNOHANG);
+	
+	gettimeofday(&response[0], NULL);
+	kill(pid1, SIGCONT);
+	
+	waitpid(pid1,NULL,0);
+
+	
+	gettimeofday(&response[1], NULL);
+	kill(pid2, SIGCONT);
+	
+	waitpid(pid2,NULL,0);
+
+	
+	gettimeofday(&response[2], NULL);
+	kill(pid3, SIGCONT);
+	
+	waitpid(pid3,NULL,0);
+
+	
+	gettimeofday(&response[3], NULL);
+	kill(pid4, SIGCONT);
+	waitpid(pid4,NULL,0);
+
+	for (int i = 0; i < 4; i++) {
+		double response_time = (response[i].tv_sec-start[i].tv_sec) * 1000 + (response[i].tv_usec - start[i].tv_usec)/1000;
+		printf("Process %d Response Time: %.2f ms\n", i + 1, response_time);
 	}
+	
 
 	/************************************************************************************************
 		- Scheduling code ends here
