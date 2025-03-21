@@ -2,6 +2,17 @@
 
 echo "Building..."
 gcc -Wall -o MLFQ MLFQ.c
+gcc -Wall -o FCFS FCFS.c
+gcc -Wall -o SJF SJF.c
+
+echo "Starting WORKLOADS with Shortest Job First Scheduling"
+./SJF
+./SJF
+./SJF
+./SJF
+./SJF
+echo "----------------------------------------------------------------------------------------------------------------------"
+
 
 echo "Starting MLFQ With 1000 time quantum"
 echo "----------------------------------------------------------------------------------------------------------------------"

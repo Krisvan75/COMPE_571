@@ -149,19 +149,20 @@ int main(int argc, char const *argv[])
                     FCFSqueue++;
                 } else {
                     clock_gettime(CLOCK_MONOTONIC, &end_time[i]);
+                    response_time[i] = (end_time[i].tv_sec - start_time[i].tv_sec) +
+                                       (end_time[i].tv_nsec - start_time[i].tv_nsec) / 1e9;
+                    total_response_time += response_time[i];
                 }
                 active_processes--;
             }
         }
     }
+    printf("FCFSqueue: %d\n", FCFSqueue); 
     while(FCFSqueue>0){
         //Second level queue: FCFS
 
         for (int i = 0; i < 4; i++) {
             if (moved_to_fcfs[i] && (i == 0 ? running1 : i == 1 ? running2 : i == 2 ? running3 : running4) > 0) {
-                if (start_time[i].tv_sec == 0 && start_time[i].tv_nsec == 0) {
-                    clock_gettime(CLOCK_MONOTONIC, &start_time[i]);
-                }
         
                 pid_t pid = (i == 0) ? pid1 : (i == 1) ? pid2 : (i == 2) ? pid3 : pid4;
                 int *running_ptr = (i == 0) ? &running1 : (i == 1) ? &running2 : (i == 2) ? &running3 : &running4;
@@ -184,6 +185,10 @@ int main(int argc, char const *argv[])
 		- Scheduling code ends here
 	************************************************************************************************/
     double avg_response_time = total_response_time / 4.0;
+    printf("Process 1 Response Time: %.6f seconds\n", response_time[0]);
+    printf("Process 2 Response Time: %.6f seconds\n", response_time[1]);
+    printf("Process 3 Response Time: %.6f seconds\n", response_time[2]);
+    printf("Process 4 Response Time: %.6f seconds\n", response_time[3]);
 
     printf("\nProcess Execution Order (Multi-Level Feedback Queue):\n");
     printf("Overall Average Response Time: %.6f seconds\n", avg_response_time);
