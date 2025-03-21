@@ -14,9 +14,9 @@
 *************************************************************************************************/
 
 #define WORKLOAD1 100000
-#define WORKLOAD2 50000
-#define WORKLOAD3 25000
-#define WORKLOAD4 10000
+#define WORKLOAD2 100000
+#define WORKLOAD3 100000
+#define WORKLOAD4 100000
 
 #define QUANTUM1 1000
 #define QUANTUM2 1000
@@ -114,27 +114,31 @@ int main(int argc, char const *argv[])
 	
 
 	
-	gettimeofday(&response[0], NULL);
+	
 	kill(pid1, SIGCONT);
 	
 	waitpid(pid1,NULL,0);
+    gettimeofday(&response[0], NULL);
 
 	
-	gettimeofday(&response[1], NULL);
+	
 	kill(pid2, SIGCONT);
 	
 	waitpid(pid2,NULL,0);
+    gettimeofday(&response[1], NULL);
 
 	
-	gettimeofday(&response[2], NULL);
+	
 	kill(pid3, SIGCONT);
 	
 	waitpid(pid3,NULL,0);
+    gettimeofday(&response[2], NULL);
 
 	
-	gettimeofday(&response[3], NULL);
+	
 	kill(pid4, SIGCONT);
 	waitpid(pid4,NULL,0);
+    gettimeofday(&response[3], NULL);
 
 	for (int i = 0; i < 4; i++) {
 		double response_time = (response[i].tv_sec-start[i].tv_sec) * 1000 + (response[i].tv_usec - start[i].tv_usec)/1000;
