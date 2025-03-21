@@ -4,6 +4,7 @@ echo "Building..."
 gcc -Wall -o MLFQ MLFQ.c
 gcc -Wall -o FCFS FCFS.c
 gcc -Wall -o SJF SJF.c
+gcc -Wall -o RR RoundRobin.c
 
 echo "Starting WORKLOADS with Shortest Job First Scheduling"
 ./SJF
@@ -13,6 +14,21 @@ echo "Starting WORKLOADS with Shortest Job First Scheduling"
 ./SJF
 echo "----------------------------------------------------------------------------------------------------------------------"
 
+echo "Starting WORKLOADS with First Come First Serve Scheduling"
+./FCFS
+./FCFS
+./FCFS
+./FCFS
+./FCFS
+echo "----------------------------------------------------------------------------------------------------------------------"
+
+echo "Starting WORKLOADS with Round Robin Scheduling"
+./RR
+./RR
+./RR
+./RR
+./RR
+echo "----------------------------------------------------------------------------------------------------------------------"
 
 echo "Starting MLFQ With 1000 time quantum"
 echo "----------------------------------------------------------------------------------------------------------------------"

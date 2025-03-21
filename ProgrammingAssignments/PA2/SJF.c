@@ -11,9 +11,9 @@
 *************************************************************************************************/
 
 #define WORKLOAD1 100000
-#define WORKLOAD2 50000
-#define WORKLOAD3 25000
-#define WORKLOAD4 10000
+#define WORKLOAD2 100000
+#define WORKLOAD3 100000
+#define WORKLOAD4 100000
 
 /************************************************************************************************ 
                     DO NOT CHANGE THE FUNCTION IMPLEMENTATION
@@ -137,7 +137,7 @@ int main(int argc, char const *argv[]) {
     printf("Process 1 (Workload %d) - Response Time: %.6f seconds\n", WORKLOAD1, response_time[0]);
 
     // Print overall response time
-    printf("\nOverall Response Time: %.6f seconds\n", total_response_time);
+    printf("\nAverage Response Time: %.6f seconds\n", total_response_time/4.0);
     printf("**********************************************************************************\n");
 
     return 0;
