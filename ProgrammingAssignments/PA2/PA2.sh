@@ -1,10 +1,7 @@
 #!/bin/bash
 
 echo "Building..."
-gcc -Wall -o MLFQ MLFQ.c
-gcc -Wall -o FCFS FCFS.c
-gcc -Wall -o SJF SJF.c
-gcc -Wall -o RR RoundRobin.c
+make -makefile.mak
 
 echo "Starting WORKLOADS with Shortest Job First Scheduling"
 ./SJF
