@@ -120,7 +120,9 @@ int main(int argc, char const *argv[])
         start_time[i].tv_nsec = 0;
     }
 
-    #define QUANTUM 5000
+    int QUANTUM = atoi(argv[1]);
+
+
 
 
 	running1 = 1;
@@ -128,129 +130,63 @@ int main(int argc, char const *argv[])
 	running3 = 1;
 	running4 = 1;
 
+    int FCFSqueue = 0;
+
     while(active_processes>0){
         //first level queue: Round Robin
-        if (!moved_to_fcfs[0] && running1 > 0) {
-            if (start_time[0].tv_sec == 0 && start_time[0].tv_nsec == 0) {
-				clock_gettime(CLOCK_MONOTONIC, &start_time[0]);
-			}
-            kill(pid1, SIGCONT);
-            usleep(QUANTUM);
-            kill(pid1, SIGSTOP);
-            if (waitpid(pid1, &running1, WNOHANG) == 0){ 
-                moved_to_fcfs[0] = true;
+        for (int i = 0; i < 4; i++) {
+            if (!moved_to_fcfs[i] && running1 > 0) {
+                clock_gettime(CLOCK_MONOTONIC, &start_time[i]);
+                kill((i == 0) ? pid1 : (i == 1) ? pid2 : (i == 2) ? pid3 : pid4, SIGCONT);
+                usleep(QUANTUM);
+                kill((i == 0) ? pid1 : (i == 1) ? pid2 : (i == 2) ? pid3 : pid4, SIGSTOP);
                 
-            }
-            else{
-                clock_gettime(CLOCK_MONOTONIC, &end_time[0]);
+                int* running_ptr = (i == 0) ? &running1 : (i == 1) ? &running2 : (i == 2) ? &running3 : &running4;
+                pid_t pid = (i == 0) ? pid1 : (i == 1) ? pid2 : (i == 2) ? pid3 : pid4;
+        
+                if (waitpid(pid, running_ptr, WNOHANG) == 0) { 
+                    moved_to_fcfs[i] = true;
+                    FCFSqueue++;
+                } else {
+                    clock_gettime(CLOCK_MONOTONIC, &end_time[i]);
+                }
                 active_processes--;
             }
         }
-        if (!moved_to_fcfs[1] && running2 > 0) {
-            if (start_time[1].tv_sec == 0 && start_time[1].tv_nsec == 0) {
-				clock_gettime(CLOCK_MONOTONIC, &start_time[1]);
-			}
-            kill(pid2, SIGCONT);
-            usleep(QUANTUM);
-            kill(pid2, SIGSTOP);
-            if (waitpid(pid2, &running2, WNOHANG) == 0){ 
-                moved_to_fcfs[1] = true;
-                
-            }
-            else{
-                clock_gettime(CLOCK_MONOTONIC, &end_time[1]);
-                active_processes--;
-            }
-        }
-        if (!moved_to_fcfs[2] && running3 > 0) {
-            if (start_time[2].tv_sec == 0 && start_time[2].tv_nsec == 0) {
-				clock_gettime(CLOCK_MONOTONIC, &start_time[2]);
-			}
-            kill(pid3, SIGCONT);
-            usleep(QUANTUM);
-            kill(pid3, SIGSTOP);
-            if (waitpid(pid3, &running3, WNOHANG) == 0){ 
-                moved_to_fcfs[2] = true;
-                
-            }
-            else{
-                clock_gettime(CLOCK_MONOTONIC, &end_time[2]);
-                active_processes--;
-            }
-        }
-        if (!moved_to_fcfs[3] && running4 > 0) {
-            if (start_time[3].tv_sec == 0 && start_time[3].tv_nsec == 0) {
-				clock_gettime(CLOCK_MONOTONIC, &start_time[3]);
-			}
-            kill(pid4, SIGCONT);
-            usleep(QUANTUM);
-            kill(pid4, SIGSTOP);
-            if (waitpid(pid4, &running4, WNOHANG) == 0){ 
-                moved_to_fcfs[3] = true;
-                
-            }
-            else{
-                clock_gettime(CLOCK_MONOTONIC, &end_time[3]);
-                active_processes--;
-            }
-        }
-
-
+    }
+    while(FCFSqueue>0){
         //Second level queue: FCFS
 
-        if (moved_to_fcfs[0] && running1 > 0) {
-            kill(pid1, SIGCONT);
-            waitpid(pid1, &running1, 0);
-            clock_gettime(CLOCK_MONOTONIC, &end_time[0]);
-            response_time[0] = (end_time[0].tv_sec - start_time[0].tv_sec) + 
-                               (end_time[0].tv_nsec - start_time[0].tv_nsec) / 1e9;
-            total_response_time += response_time[0];
-            active_processes--;
+        for (int i = 0; i < 4; i++) {
+            if (moved_to_fcfs[i] && (i == 0 ? running1 : i == 1 ? running2 : i == 2 ? running3 : running4) > 0) {
+                if (start_time[i].tv_sec == 0 && start_time[i].tv_nsec == 0) {
+                    clock_gettime(CLOCK_MONOTONIC, &start_time[i]);
+                }
+        
+                pid_t pid = (i == 0) ? pid1 : (i == 1) ? pid2 : (i == 2) ? pid3 : pid4;
+                int *running_ptr = (i == 0) ? &running1 : (i == 1) ? &running2 : (i == 2) ? &running3 : &running4;
+        
+                kill(pid, SIGCONT);
+                waitpid(pid, running_ptr, 0);
+                clock_gettime(CLOCK_MONOTONIC, &end_time[i]);
+        
+                response_time[i] = (end_time[i].tv_sec - start_time[i].tv_sec) +
+                                   (end_time[i].tv_nsec - start_time[i].tv_nsec) / 1e9;
+                total_response_time += response_time[i];
+                FCFSqueue--;
+            }
         }
-
-        if (moved_to_fcfs[1] && running2 > 0) {
-            kill(pid2, SIGCONT);
-            waitpid(pid2, &running2, 0);
-            clock_gettime(CLOCK_MONOTONIC, &end_time[1]);
-            response_time[1] = (end_time[1].tv_sec - start_time[1].tv_sec) + 
-                               (end_time[1].tv_nsec - start_time[1].tv_nsec) / 1e9;
-            total_response_time += response_time[1];
-            active_processes--;
-        }
-
-        if (moved_to_fcfs[2] && running3 > 0) {
-            kill(pid3, SIGCONT);
-            waitpid(pid3, &running3, 0);
-            clock_gettime(CLOCK_MONOTONIC, &end_time[2]);
-            response_time[2] = (end_time[2].tv_sec - start_time[2].tv_sec) + 
-                               (end_time[2].tv_nsec - start_time[2].tv_nsec) / 1e9;
-            total_response_time += response_time[2];
-            active_processes--;
-        }
-
-        if (moved_to_fcfs[3] && running4 > 0) {
-            kill(pid4, SIGCONT);
-            waitpid(pid4, &running4, 0);
-            clock_gettime(CLOCK_MONOTONIC, &end_time[3]);
-            response_time[3] = (end_time[3].tv_sec - start_time[3].tv_sec) + 
-                               (end_time[3].tv_nsec - start_time[3].tv_nsec) / 1e9;
-            total_response_time += response_time[3];
-            active_processes--;
-        }
-
     }
+        
 
 
 	/************************************************************************************************
 		- Scheduling code ends here
 	************************************************************************************************/
     double avg_response_time = total_response_time / 4.0;
+
     printf("\nProcess Execution Order (Multi-Level Feedback Queue):\n");
-    printf("Process 4 (Workload %d) - Response Time: %.8f seconds\n", WORKLOAD4, response_time[3]);
-    printf("Process 3 (Workload %d) - Response Time: %.8f seconds\n", WORKLOAD3, response_time[2]);
-    printf("Process 2 (Workload %d) - Response Time: %.8f seconds\n", WORKLOAD2, response_time[1]);
-    printf("Process 1 (Workload %d) - Response Time: %.8f seconds\n", WORKLOAD1, response_time[0]);
-    printf("\nOverall Average Response Time: %.6f seconds\n", avg_response_time);
+    printf("Overall Average Response Time: %.6f seconds\n", avg_response_time);
 
 	return 0;
 }
